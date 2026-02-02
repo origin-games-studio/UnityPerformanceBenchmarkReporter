@@ -194,6 +194,8 @@ namespace UnityPerformanceBenchmarkReporter
                         XrDevice = "",
                         XrModel = ""
                     },
+                    CustomBenchmarkMetadata = 
+                        JsonConvert.DeserializeObject<CustomBenchmarkMetadata>(result.Player.AndroidTargetSdkVersion),
                     StartTime = result.Date,
                     TestSuite = result.TestSuite,
                     Results = new List<PerformanceTestResult>()

@@ -13,7 +13,8 @@ namespace UnityPerformanceBenchmarkReporter.Entities
         public QualitySettings QualitySettings;
         public PlayerSettings PlayerSettings;
         public ProjectVersion ProjectVersion;
-
+        public CustomBenchmarkMetadata CustomBenchmarkMetadata;
+        
         public string TestProject;
         public string TestSuite;
         public double StartTime;
@@ -104,7 +105,12 @@ namespace UnityPerformanceBenchmarkReporter.Entities
 
         public string ScriptingRuntimeVersion;
     }
-    
+
+    [Serializable]
+    public class CustomBenchmarkMetadata
+    {
+        public List<string> Data;
+    }
 
     [Serializable]
      public class Yamato

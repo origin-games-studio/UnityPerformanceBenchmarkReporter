@@ -97,7 +97,8 @@ namespace UnityPerformanceBenchmarkReporter
             typeof(ScreenSettings),
             typeof(QualitySettings),
             typeof(BuildSettings),
-            typeof(EditorVersion)
+            typeof(EditorVersion),
+            typeof(CustomBenchmarkMetadata)
         };
 
         public readonly List<TypeMetadata> TypeMetadata = new List<TypeMetadata>();
@@ -318,7 +319,10 @@ namespace UnityPerformanceBenchmarkReporter
                     // if we have valid field metadata to process
                     if (fieldsToProcess.Length > 0)
                     {
-                        ProcessMetaData(xmlFileNamePath, fieldsToProcess, typeMetadata, metadataType, obj);
+                        if (metadataType == typeof(CustomBenchmarkMetadata))
+                            ProcessCustomBenchmarkMetadata(xmlFileNamePath, fieldsToProcess, typeMetadata, obj);
+                        else
+                            ProcessMetaData(xmlFileNamePath, fieldsToProcess, typeMetadata, metadataType, obj);
                     }
                 }
             }
@@ -482,6 +486,11 @@ namespace UnityPerformanceBenchmarkReporter
             {
                 obj = (EditorVersion) fieldInfo.GetValue(performanceTestRun);
             }
+
+            if (metadataType == typeof(CustomBenchmarkMetadata))
+            {
+                obj = (CustomBenchmarkMetadata)fieldInfo.GetValue(performanceTestRun);
+            }
         }
 
         private string GetValueBasedOnType(Type metadataType, FieldInfo field, object obj)
@@ -515,6 +524,11 @@ namespace UnityPerformanceBenchmarkReporter
             if (metadataType == typeof(EditorVersion))
             {
                 value = GetValue<EditorVersion>(field, obj);
+            }
+
+            if (metadataType == typeof(CustomBenchmarkMetadata))
+            {
+                value = GetValue<CustomBenchmarkMetadata>(field, obj);
             }
 
             return value;
@@ -645,6 +659,87 @@ namespace UnityPerformanceBenchmarkReporter
                 }
             }
         }
+
+        private void ProcessCustomBenchmarkMetadata(string xmlFileNamePath, FieldInfo[] fieldsToProcess,
+            TypeMetadata typeMetadata, object obj)
+        {
+            foreach (var field in fieldsToProcess)
+            {
+                // Expected: a List<string> field
+                if (!IsIEnumerableFieldType(field))
+                {
+                    // If there is still a standalone string field, you can decide to ignore it or handle it
+                    var rawSingle = GetValueBasedOnType(typeof(CustomBenchmarkMetadata), field, obj);
+                    if (string.IsNullOrEmpty(rawSingle) || rawSingle == MetadataNotAvailable)
+                        continue;
+
+                    if (!TryParseKeyValuePipe(rawSingle, out var k1, out var v1))
+                        continue;
+
+                    UpsertCustomField(xmlFileNamePath, typeMetadata, k1, v1);
+                    continue;
+                }
+
+                // Get the list and process each item as a separate metadata entry
+                var enumerable = field.GetValue(obj) as IEnumerable;
+                if (enumerable == null) continue;
+
+                foreach (var item in enumerable)
+                {
+                    var raw = item as string;
+
+                    // Rule: do not render if null/empty/"Metadata not available"
+                    if (string.IsNullOrEmpty(raw) || raw == MetadataNotAvailable)
+                        continue;
+
+                    if (!TryParseKeyValuePipe(raw, out var key, out var val))
+                        continue;
+
+                    UpsertCustomField(xmlFileNamePath, typeMetadata, key, val);
+                }
+            }
+
+            // Final backfill is the same as the default behavior
+            foreach (var fieldGroup in typeMetadata.FieldGroups.Where(fg =>
+                         fg.Values.Length < typeMetadata.ValidResultCount + 1))
+            {
+                while (fieldGroup.Values.Length < typeMetadata.ValidResultCount + 1)
+                    InsertFieldValue(xmlFileNamePath, fieldGroup, MetadataNotAvailable, isMismatched: true);
+            }
+
+            typeMetadata.ValidResultCount++;
+        }
+
+        private void UpsertCustomField(string xmlFileNamePath, TypeMetadata typeMetadata, string key, string val)
+        {
+            if (!typeMetadata.FieldGroups.Any(fg => fg.FieldName.Equals(key)))
+                typeMetadata.FieldGroups.Add(new FieldGroup(key));
+
+            var group = typeMetadata.FieldGroups.First(fg => fg.FieldName.Equals(key));
+
+            InsertFieldValueWithBackfill(xmlFileNamePath, group, typeMetadata, val);
+            DetermineIfMismatchExists(typeMetadata, group);
+        }
+
+        private static bool TryParseKeyValuePipe(string input, out string key, out string val)
+        {
+            key = null;
+            val = null;
+
+            var idx = input.IndexOf('|');
+            if (idx <= 0 || idx >= input.Length - 1)
+                return false;
+
+            key = input.Substring(0, idx).Trim();
+            val = input.Substring(idx + 1).Trim();
+
+            if (string.IsNullOrEmpty(key))
+                return false;
+
+            if (string.IsNullOrEmpty(val))
+                val = MetadataNotAvailable;
+
+            return true;
+        }
     }
 }
-
