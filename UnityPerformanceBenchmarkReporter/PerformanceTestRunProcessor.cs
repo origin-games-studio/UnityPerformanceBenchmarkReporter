@@ -228,7 +228,8 @@ namespace UnityPerformanceBenchmarkReporter
                 BuildSettings = runResults.BuildSettings,
                 ScreenSettings = runResults.ScreenSettings,
                 QualitySettings = runResults.QualitySettings,
-                PlayerSettings = runResults.PlayerSettings
+                PlayerSettings = runResults.PlayerSettings,
+                CustomBenchmarkMetadata = runResults.CustomBenchmarkMetadata
             };
             return performanceTestRunResult;
         }

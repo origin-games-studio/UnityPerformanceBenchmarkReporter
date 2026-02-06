@@ -135,6 +135,8 @@ namespace UnityPerformanceBenchmarkReporter
                         XrDevice = run.Hardware.XrDevice,
                         XrModel = run.Hardware.XrModel
                     },
+                    CustomBenchmarkMetadata =
+                        TryDeserializeCustomBenchmarkMetadataObject(run.Player.AndroidTargetSdkVersion),
                     StartTime = run.Date,
                     TestSuite = run.TestSuite,
                     Results = new List<PerformanceTestResult>()
@@ -219,6 +221,18 @@ namespace UnityPerformanceBenchmarkReporter
             }
 
             
+        }
+        
+        private static CustomBenchmarkMetadata TryDeserializeCustomBenchmarkMetadataObject(string json)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<CustomBenchmarkMetadata>(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

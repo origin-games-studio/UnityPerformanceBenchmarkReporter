@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using UnityPerformanceBenchmarkReporter.Entities;
 using UnityPerformanceBenchmarkReporter.Report;
 
@@ -39,6 +41,8 @@ namespace UnityPerformanceBenchmarkReporter
 
         private static int Main(string[] args)
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             var aggregateTestRunResults = new List<PerformanceTestRunResult>();
             var baselinePerformanceTestRunResults = new List<PerformanceTestRunResult>();
             var baselineTestResults = new List<TestResult>();

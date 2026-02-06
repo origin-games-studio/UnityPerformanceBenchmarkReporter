@@ -12,6 +12,7 @@ namespace UnityPerformanceBenchmarkReporter.Entities
         public ScreenSettings ScreenSettings;
         public QualitySettings QualitySettings;
         public PlayerSettings PlayerSettings;
+        public CustomBenchmarkMetadata CustomBenchmarkMetadata;
         public string TestSuite;
         public DateTime StartTime;
         public List<TestResult> TestResults  = new List<TestResult>();
@@ -25,7 +26,8 @@ namespace UnityPerformanceBenchmarkReporter.Entities
                    || QualitySettings != null
                    || ScreenSettings != null
                    || BuildSettings != null
-                   || EditorVersion != null;
+                   || EditorVersion != null
+                   || CustomBenchmarkMetadata != null;
         }
     }
 }
